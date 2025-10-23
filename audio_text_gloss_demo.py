@@ -26,6 +26,8 @@ reload(custom_english)
 from custom_english import EnglishCustom as English
 from sign_language_translator.text.tagger import Tags
 from pprint import pprint
+import sign_language_translator as slt
+
 
 # ===========================
 # 🧠 Load Whisper Model
@@ -123,7 +125,11 @@ def text_convert_gloss(obj, text):
     print('\n ASL-style Gloss:')
     print(gloss)
 
-    # step6: save gloss output
+    return gloss
+
+def save_gloss(gloss):
+
+    # save gloss output
     gloss_dir = Path("data/gloss")
     gloss_dir.mkdir(parents=True, exist_ok=True)
     gloss_path = gloss_dir / "asl_output.txt"
@@ -147,4 +153,22 @@ if __name__ == "__main__":
         with open(out_path, 'r', encoding='utf-8') as f:
             plain_text = f.read().strip()
         english = English()
-        text_convert_gloss(english, plain_text)
+        gloss = text_convert_gloss(english, plain_text)
+
+        # save to temp folder
+        save_gloss(gloss)
+
+        # Create a translator model (Concatenative Synthesis)
+        model = slt.models.ConcatenativeSynthesis(
+            text_language="english",        # or "urdu"
+            sign_language="pk-sl",          # or "us-asl", "bsl", etc.
+            sign_format="video"             # or "landmarks"
+        )
+
+        # Translate a text sentence into a sign representation
+        sign = model.translate(gloss)
+
+        # Show or save the generated sign video
+        sign.show()             # open a viewer window
+        sign.save("sign_output.mp4", overwrite=True)
+        print(f'Video saved')
